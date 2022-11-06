@@ -1,9 +1,8 @@
-import pprint
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 from jsondiff import diff
 
-pp = pprint.PrettyPrinter(indent=4)
+from pytest_asserters.utils.messages import msg
 
 
 def assert_json_equal(
@@ -11,11 +10,29 @@ def assert_json_equal(
 ) -> None:
     """
     An asserter to compare if 2 JSON objects are equal
-        left (dict): Left-hand side of the equation
-        right (dict): Right-hand side of the equation
-        ignore_fields (List[str]): list of fields to ignore. This is often use
-        when there are automatically generated field like created_date, uuid, ...
+
+    Parameters
+    ----------
+    left : dict
+        Left-hand side of the comparison
+    right : dict
+        Right-hand side of the comparison
+    ignore_fields : Optional[List[str]]
+        List of fields to ignore. This is often used when there are randomly
+        generated fields like `created_date`, `uuid`, ...`
+
+    Returns
+    -------
+    None
+        This function doesn't return anything when successfully runs. If the
+        objects are not equal, an AssertionError will be raised
+
+    Raises
+    ------
+    AssertionError:
+        Print the left and righ objects and their differences if any
     """
+
     if ignore_fields:
         for field in ignore_fields:
             if field in left:
@@ -23,14 +40,7 @@ def assert_json_equal(
             if field in right:
                 del right[field]
 
-    diffs = diff(left, right, syntax="symmetric")
-
-    msg = f"""
-    JSON objects are not equal
-    Left: {pp.pformat(left)}
-    Right: {pp.pformat(right)}
-    Differences: {pp.pformat(diffs)}
-    """
+    diffs: Optional[Union[List, Dict, Tuple]] = diff(left, right, syntax="symmetric")
 
     if left != right:
-        raise AssertionError(msg)
+        raise AssertionError(msg.json_not_equal(left=left, right=right, diffs=diffs))
